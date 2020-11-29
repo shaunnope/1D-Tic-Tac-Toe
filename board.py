@@ -66,8 +66,9 @@ class Cube:
     def init_cube(self, num_boards):
         if num_boards == 6:
             # init cube projection of boards
+            p = int(2*self.padding*self.side)
             x,y = self.corner
-            w = self.side*3
+            w = self.side*3+p
             corners = [(x+w,y), (x,y+w), (x+w,y+w), (x+2*w,y+w), (x+3*w,y+w), (x+w,y+2*w)]
             for i in range(num_boards):
                 self.boards.append(Board(self, self.root, corners[i], self.side))
@@ -80,21 +81,23 @@ class Cube:
     def init_controls(self):
         # init list of control buttons [up(3), down(6), left(3), right(6)]
         self.controls = [[None,None,None],[None,None,None,None,None,None],[None,None,None],[None,None,None,None,None,None]]
-        p = int(self.padding*self.play_side)
+        p = int(2.5*self.padding*self.play_side)
         x,y = self.play_corner
         w,h = self.play_side,self.play_side/3
-        corners = [(x,y-h-p),(x+w,y-h-p),(x+2*w,y-h-p),
-                    (x,y+3*w+p),(x+w,y+3*w+p),(x+2*w,y+3*w+p),
-                    (x,y+3*w+h+2*p),(x+w,y+3*w+h+2*p),(x+2*w,y+3*w+h+2*p),
-                    (x-h-p,y),(x-h-p,y+w),(x-h-p,y+2*w),
-                    (x+3*w+p,y),(x+3*w+p,y+w),(x+3*w+p,y+2*w),(x+3*w+h+2*p,y),(x+3*w+h+2*p,y+w),(x+3*w+h+2*p,y+2*w)]
-        dim = [(w,h),(h,w)]
+        corners = [(x+p,y-h-p),(x+p+w,y-h-p),(x+p+2*w,y-h-p),
+                    (x+p,y+3*w+p),(x+p+w,y+3*w+p),(x+p+2*w,y+3*w+p),
+                    (x+p,y+3*w+h+p),(x+p+w,y+3*w+h+p),(x+p+2*w,y+3*w+h+p),
+                    (x-h-p,y+p),(x-h-p,y+p+w),(x-h-p,y+p+2*w),
+                    (x+3*w+p,y+p),(x+3*w+p,y+p+w),(x+3*w+p,y+p+2*w),
+                    (x+3*w+h+p,y+p),(x+3*w+h+p,y+p+w),(x+3*w+h+p,y+p+2*w)]
+        dim = [(w-2*p,h),(h,w-2*p)]
         symbs = ['^','v','<','>']
+        self.controls_commands = [partial(self.rotate_up,1),partial(self.rotate_up,-1),partial(self.rotate_left,1),partial(self.rotate_left,-1)]
         index = 0
         for i in range(4):
             num = 3*(i%2+1)
             for j in range(num):
-                self.controls[i][j] = tk.Button(self.root, text = symbs[i])
+                self.controls[i][j] = tk.Button(self.root, text = symbs[i], command =self.controls_commands[i])
                 self.controls[i][j].place(x= corners[index][0], y= corners[index][1], width=dim[i>1][0], height=dim[i>1][1])
                 index +=1
 
@@ -110,9 +113,10 @@ class Cube:
         old_boards = [deepcopy(face.board) for face in self.boards]
         for i in range(len(self.boards)):
             self.boards[i].board = old_boards[order[i]]
+            self.boards[i].count_wins()
         self.boards[4].rotate()
-        self.boards[1].rotate(1)
-        self.boards[3].rotate(-1)
+        self.boards[1].rotate(times)
+        self.boards[3].rotate(-times)
 
     # method to rotate cube left a given number of times
     def rotate_left(self, times = 1):
@@ -123,16 +127,16 @@ class Cube:
         old_boards = [deepcopy(face.board) for face in self.boards]
         for i in range(len(self.boards)):
             self.boards[i].board = old_boards[order[i]]
-        self.boards[0].rotate(-1)
-        self.boards[5].rotate(1)
-
+            self.boards[i].count_wins()
+        self.boards[0].rotate(-times)
+        self.boards[5].rotate(times)
 
     # displays all the Board instances
     def display_cube(self):
         self.playfield.display_board()
         for board in self.boards:
             board.display_board()
-
+    # updates display of boards
     def update_cube_display(self):
         self.playfield.board = self.boards[2].board
         self.playfield.update_board()
@@ -153,7 +157,7 @@ class Cube:
         if self.wins[1] > old_wins[1] or self.wins[2] > old_wins[2]:
             # check who is turning cube
             turner = (self.wins[1] > old_wins[1]) + (self.wins[2] > old_wins[2])
-            priority = 2 - ((self.turn_num-1)%2)
+            priority = 2 - (self.turn_num%2)
             # prompt to turn cube
             self.turn_cube()
 
@@ -176,6 +180,7 @@ class Cube:
     def turn_cube(self):
         # display turn buttons over current board
         # prompt turn
+        
         pass
 
 class Board(Cube):
@@ -228,7 +233,6 @@ class Board(Cube):
         self.parent.update_cube_display()
         self.rotate(times-1)
 
-
     # returns True if coords provided is empty cell
     # False otherwise
     def coordinates_valid(self, coords = (0,0)):
@@ -264,13 +268,9 @@ class Board(Cube):
             self.board[i][j] = 2 - (turn_num%2)
             self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
             
-            old_wins = deepcopy(self.wins)
             self.count_wins()
-            if self.wins != old_wins:
-                self.parent.turn_cube()
-            
-            self.parent.turn_num += 1
             self.parent.update_cube_state()
+            self.parent.turn_num += 1
         else:
             tkinter.messagebox.showinfo(title='Invalid cell',message='Please choose a valid cell')
 
@@ -301,7 +301,7 @@ def start():
     root = tk.Tk()
     root.title('1D Tic Tac Toe')
     root.geometry('1600x800+-10+0')
-    game = Cube(root)
+    game = Cube(root,1)
     root.mainloop()
 
 start()
