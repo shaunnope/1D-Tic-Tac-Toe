@@ -54,7 +54,7 @@ class Cube:
         self.debug.place(x= 20, y= 20, width=50, height=20)
 
     def debug_func(self):
-        self.playfield.rotate(1)
+        self.rotate_left(1)
 
     def init_scoreboard(self):
         self.label=tk.Label(text=f"O wins: {self.wins[1]}\nX wins: {self.wins[2]}",bg='#00ffff',
@@ -98,14 +98,34 @@ class Cube:
                 self.controls[i][j].place(x= corners[index][0], y= corners[index][1], width=dim[i>1][0], height=dim[i>1][1])
                 index +=1
 
-    # recursive function to rotate cube down
-    def rotate_down(self, times = 1):
-        order = [0,2,5,4]
-        order = order[times-4:times-1]
+    # method to rotate cube up a given number of times
+    def rotate_up(self, times = 1):
+        times %= 4
+        order = [0,2,5,4,0,2,5]
+        order = order[times:times+4]
+        print(order)
         order = [order[0], 1, order[1], 3, order[3], order[2]]
-        old_boards = deepcopy(self.boards)
-        self.boards = [old_boards[i] for i in order]
-        pass
+        
+        self.boards[4].rotate()
+        old_boards = [deepcopy(face.board) for face in self.boards]
+        for i in range(len(self.boards)):
+            self.boards[i].board = old_boards[order[i]]
+        self.boards[4].rotate()
+        self.boards[1].rotate(1)
+        self.boards[3].rotate(-1)
+
+    # method to rotate cube left a given number of times
+    def rotate_left(self, times = 1):
+        times %= 4
+        order = [1,2,3,4,1,2,3]
+        order = [0] + order[times:times+4] + [5]
+        
+        old_boards = [deepcopy(face.board) for face in self.boards]
+        for i in range(len(self.boards)):
+            self.boards[i].board = old_boards[order[i]]
+        self.boards[0].rotate(-1)
+        self.boards[5].rotate(1)
+
 
     # displays all the Board instances
     def display_cube(self):
@@ -113,14 +133,30 @@ class Cube:
         for board in self.boards:
             board.display_board()
 
+    def update_cube_display(self):
+        self.playfield.board = self.boards[2].board
+        self.playfield.update_board()
+        for board in self.boards:
+            board.update_board()
+
     # update the attributes of the cube after each move
-    def update_cube(self):
+    def update_cube_state(self):
+        self.update_cube_display()
         # store previous wins
         old_wins = deepcopy(self.wins)
         # count current wins
         for key in self.wins.keys():
             self.wins[key] = sum([board.wins[key] for board in self.boards])
-        
+        self.update_scoreboard()
+
+        # check if total num of wins for a player increases
+        if self.wins[1] > old_wins[1] or self.wins[2] > old_wins[2]:
+            # check who is turning cube
+            turner = (self.wins[1] > old_wins[1]) + (self.wins[2] > old_wins[2])
+            priority = 2 - ((self.turn_num-1)%2)
+            # prompt to turn cube
+            self.turn_cube()
+
         # if all cells are filled, end the game
         if self.turn_num >= len(self.boards)*9:
             winner = "It's a tie!"
@@ -136,14 +172,7 @@ class Cube:
             else:
                 tkinter.messagebox.showinfo(title='Good Game!',message='Thanks for playing!')
                 self.root.destroy()
-        # else, check if total num of wins for a player increases
-        elif self.wins[1] > old_wins[1] or self.wins[2] > old_wins[2]:
-            # check who is turning cube
-            turner = (self.wins[1] > old_wins[1]) + (self.wins[2] > old_wins[2])
-            priority = 2 - ((self.turn_num-1)%2)
-            # prompt to turn cube
-            self.turn_cube()
-            pass
+
     def turn_cube(self):
         # display turn buttons over current board
         # prompt turn
@@ -174,16 +203,17 @@ class Board(Cube):
                 symb = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
                 self.buttons[i][j] = tk.Button(self.root, text = symb, command=partial(self.make_move,(i,j)))
                 self.buttons[i][j].place(x= x + i * self.side, y= y + j * self.side, width=self.side, height=self.side)
+    # updates the text for each button
     def update_board(self):
         for i in range(3):
             for j in range(3):
                 self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
 
-    # recusive function to rotate orientation of a face clockwise a given number of times
+    # recusive method to rotate orientation of a face anticlockwise a given number of times
     def rotate(self, times = 2):
         times %= 4
         if times == 0:
-            return
+            return self.board
 
         old_board = deepcopy(self.board)
         self.board[0][0] = old_board[2][0]
@@ -195,6 +225,7 @@ class Board(Cube):
         self.board[2][1] = old_board[1][2]
         self.board[2][2] = old_board[0][2]
         self.update_board()
+        self.parent.update_cube_display()
         self.rotate(times-1)
 
 
@@ -239,7 +270,7 @@ class Board(Cube):
                 self.parent.turn_cube()
             
             self.parent.turn_num += 1
-            self.parent.update_cube()
+            self.parent.update_cube_state()
         else:
             tkinter.messagebox.showinfo(title='Invalid cell',message='Please choose a valid cell')
 
