@@ -261,9 +261,8 @@ class Board(Cube):
         i,j = coords
 
         # Check if we have valid coordinates
-        is_valid = self.coordinates_valid(coords)
-
         # If valid coordinates, update the board
+        is_valid = self.coordinates_valid(coords)
         if (is_valid):
             self.board[i][j] = 2 - (turn_num%2)
             self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
