@@ -96,11 +96,11 @@ class Cube:
                 self.root.destroy()
 
     def turn_cube(self, board,index):
-            board=board
-            index=index
+            #highlights winning board
             for i in range(3):
                 for j in range(3):
                     board.buttons[i][j]['bg'] = '#ff8080'
+                    
             rotate_row=tk.messagebox.askyesno(title='rotate row',message='do you want to rotate a row?')
             if rotate_row:
                 row_num=tk.simpledialog.askinteger(title='row number',prompt='which row do you want to rotate?(0~2)',initialvalue=None,minvalue=0,maxvalue=2)
