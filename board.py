@@ -4,6 +4,8 @@ import tkinter as tk
 import tkinter.messagebox
 from functools import partial
 
+import time
+
 class Game(tk.Frame):
     def __init__(self, num_boards = 6, master=None):
         super().__init__(master)
@@ -46,6 +48,7 @@ class Cube:
         self.boards = []
         self.init_cube(num_boards)
         self.playfield = Board(self, self.root, self.play_corner, self.play_side)
+        self.playfield.board = self.boards[2].board
 
         self.init_controls()
         
@@ -54,7 +57,7 @@ class Cube:
         self.debug.place(x= 20, y= 20, width=50, height=20)
 
     def debug_func(self):
-        self.make_turn(index=0)
+        self.toggle_controls()
 
     def init_scoreboard(self):
         self.label=tk.Label(text=f"O wins: {self.wins[1]}\nX wins: {self.wins[2]}",bg='#00ffff',
@@ -97,7 +100,14 @@ class Cube:
         
         # init callback methods
         self.controls_commands = [partial(self.rotate_up,1),partial(self.rotate_up,-1),partial(self.rotate_up,2),partial(self.rotate_left,1),partial(self.rotate_left,-1),partial(self.rotate_left,2)]
-        self.turn_commands = []
+        self.turn_commands = [
+                                [partial(self.make_turn,1,0,True), partial(self.make_turn,1,1,True),partial(self.make_turn,1,2,True)],
+                                [partial(self.make_turn,-1,0,True), partial(self.make_turn,-1,1,True),partial(self.make_turn,-1,2,True)],
+                                [partial(self.make_turn,2,0,True), partial(self.make_turn,2,1,True),partial(self.make_turn,2,2,True)],
+                                [partial(self.make_turn,1,0,False), partial(self.make_turn,1,1,False),partial(self.make_turn,1,2,False)],
+                                [partial(self.make_turn,-1,0,False), partial(self.make_turn,-1,1,False),partial(self.make_turn,-1,2,False)],
+                                [partial(self.make_turn,2,0,False), partial(self.make_turn,2,1,False),partial(self.make_turn,2,2,False)]
+                                ]
         self.is_turning = False
 
         for i in range(6):
@@ -116,10 +126,12 @@ class Cube:
         old_boards = [deepcopy(face.board) for face in self.boards]
         for i in range(len(self.boards)):
             self.boards[i].board = old_boards[order[i]]
-            self.boards[i].count_wins()
+            self.boards[i].count_wins() # update the wins for the board
         self.boards[4].rotate()
         self.boards[1].rotate(times)
         self.boards[3].rotate(-times)
+
+        self.update_cube_state()
 
     # rotate cube left a given number of times
     def rotate_left(self, times = 1):
@@ -130,9 +142,12 @@ class Cube:
         old_boards = [deepcopy(face.board) for face in self.boards]
         for i in range(len(self.boards)):
             self.boards[i].board = old_boards[order[i]]
-            self.boards[i].count_wins()
+            self.boards[i].count_wins() # update the wins for the board
         self.boards[0].rotate(-times)
         self.boards[5].rotate(times)
+
+        self.update_cube_state()
+
 
     # turn a row/ col based on index, centered on board 2
     def make_turn(self, times = 1, index = 1, is_col = True):
@@ -167,13 +182,20 @@ class Cube:
             elif index == 2:
                 self.boards[5].rotate(times)
             
-        self.update_cube_display()
+        self.update_cube_state()
 
     def toggle_controls(self):
         if self.is_turning:
             for i in range(6):
                 for j in range(3):
-                    pass
+                    self.controls[i][j]['command'] = self.turn_commands[i][j]
+                    self.controls[i][j]['bg'] = '#FF3012'
+        else:
+            for i in range(6):
+                for j in range(3):
+                    self.controls[i][j]['command'] = self.controls_commands[i]
+                    self.controls[i][j]['bg'] = '#FFFFFF'
+        self.is_turning = not self.is_turning
 
     # displays all the Board instances
     def display_cube(self):
@@ -193,6 +215,7 @@ class Cube:
     # update the attributes of the cube after each move
     def update_cube_state(self):
         self.update_cube_display()
+        self.boards[2].wins = self.playfield.count_wins()
         # store previous wins
         old_wins = deepcopy(self.wins)
         # count current wins
@@ -218,7 +241,7 @@ class Cube:
                                                     message= winner+'\n\n'+message + '\nRestart?')
             if is_restart:
                 self.root.destroy()
-                #self.root.restart()
+                #self.parent.restart()
                 start()
             else:
                 tkinter.messagebox.showinfo(title='Good Game!',message='Thanks for playing!')
@@ -312,7 +335,7 @@ class Board(Cube):
         if (is_valid):
             self.board[i][j] = 2 - (turn_num%2)
             self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
-            
+
             self.count_wins()
             self.parent.update_cube_state()
             self.parent.turn_num += 1
@@ -340,7 +363,6 @@ class Board(Cube):
             wins[int(diag2**(1/3))] += 1
 
         self.wins = wins
-        print(self.wins)
         return wins
 
 def start():
