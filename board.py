@@ -5,6 +5,7 @@ import tkinter.messagebox
 from functools import partial
 
 import time
+import os
 
 class Game(tk.Frame):
     def __init__(self, num_boards = 6, master=None):
@@ -38,7 +39,7 @@ class Cube:
         self.side = 15
         self.play_corner = (380,120)
         self.play_side = 100
-
+    
         # score tracking
         self.turn_num = 0
         self.wins = {1: 0 , 2: 0} # 1: circle, 2: cross
@@ -56,7 +57,7 @@ class Cube:
         self.debug.place(x= 20, y= 20, width=50, height=20)
 
     def debug_func(self):
-        self.playfield.toggle_activity()
+        self.playfield.set_activity()
 
     def init_scoreboard(self):
         self.label=tk.Label(text=f"O wins: {self.wins[1]}\nX wins: {self.wins[2]}",bg='#00ffff',
@@ -188,7 +189,7 @@ class Cube:
         self.can_turn = False
         self.toggle_button.place_forget()
         self.toggle_controls() # toggles function of control buttons after turn
-        self.playfield.toggle_activity()
+        self.playfield.set_activity(True)
 
     def toggle_controls(self):
         if self.is_turning and self.can_turn:
@@ -256,7 +257,7 @@ class Cube:
         self.toggle_button.place(**self.toggle_place)
         self.can_turn = True
         self.is_turning = True
-        self.playfield.toggle_activity()
+        self.playfield.set_activity(False)
         
 class Board(Cube):
     # init empty board and board score
@@ -274,7 +275,6 @@ class Board(Cube):
         self.wins = {1: 0, 2: 0} # 1: circle, 2: cross
 
         self.buttons = [[None, None, None], [None, None, None], [None, None, None]]
-        self.state = 'normal'
 
     # displays the board of buttons
     def display_board(self):
@@ -290,11 +290,10 @@ class Board(Cube):
             for j in range(3):
                 self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
     # toggles button inactivity
-    def toggle_activity(self):
-        self.state = 'normal'*(self.state == 'disabled') + 'disabled'*(self.state == 'normal')
+    def set_activity(self, is_active = True):
         for i in range(len(self.buttons)):
             for j in range(len(self.buttons[i])):
-                self.buttons[i][j]['state'] = self.state
+                self.buttons[i][j]['state'] = 'normal'*(is_active) + 'disabled'*(not is_active)
 
     # recusive method to rotate orientation of a face anticlockwise a given number of times
     def rotate(self, times = 2):
@@ -385,5 +384,3 @@ def start():
     root.mainloop()
 
 start()
-#game = Game(1)
-#a = Cube(None, 1)
