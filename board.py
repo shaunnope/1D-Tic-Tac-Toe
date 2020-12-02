@@ -6,6 +6,8 @@ from functools import partial
 
 import time
 import os
+import sys
+import random
 
 class Game(tk.Frame):
     def __init__(self, num_boards = 6, master=None):
@@ -15,7 +17,8 @@ class Game(tk.Frame):
         self.num_boards = num_boards
         
         #self.window = tk.Tk()
-        self.restart()
+        #self.restart()
+        self.title()
     
     def restart(self):
         #self.window.destroy()
@@ -26,6 +29,22 @@ class Game(tk.Frame):
         self.cube = Cube(self, self.num_boards)
 
         self.window.mainloop()
+    
+    # Generate title   
+    def title(self):
+        f = open(r'intro.txt')
+        read = f.read()
+
+        count = 0
+        for char in read:
+            if char == '\n':
+                count += 1
+            if char == '0' and count < 10:
+                sys.stdout.write(random.choice('TTTTEEX'))
+            else:
+                sys.stdout.write(char)
+            sys.stdout.flush()
+            time.sleep(0.02)
 
 # (cross: _ wins, circle: _ wins)
 class Cube:
@@ -383,4 +402,6 @@ def start():
     game = Cube(root)
     root.mainloop()
 
-start()
+#start()
+game = Game()
+#game.title()
