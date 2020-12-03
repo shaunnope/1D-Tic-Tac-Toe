@@ -10,20 +10,16 @@ import sys
 import random
 
 class Game():
-    def __init__(self, num_boards = 6, master=None):
-        #super().__init__(master)
-        self.master = master
-
+    def __init__(self, num_boards = 6):
         self.num_boards = num_boards
         self.options = {}
         self.icon_select()
         self.restart()
         
     def restart(self):
-        #self.window.destroy()
         self.window = tk.Tk()
         self.window.title('1D Tic Tac Toe')
-        self.window.geometry('500x300+500+100')
+        self.window.geometry('1000x600+100+0')
 
         self.cube = Cube(self.window, self.num_boards, parent = self, **self.options)
 
@@ -52,32 +48,41 @@ class Game():
 
     # Select symbols for game
     def icon_select(self):
+        welcome = '\n'*10+"Welcome to Rubik's-Tac-Toe!\n\nA game of passion, determination, and bloodlust."+'\n'*5
+
+        for char in welcome:
+            if char == '\n':
+                time.sleep(0.1)
+            sys.stdout.write(char)
+            sys.stdout.flush()
+            time.sleep(0.02)
+
+        print('\n'*5)
+        print('='*60+'\n')
+
         icons = ['O','X']
-        prompt1 = input("Player 1, your icon is 'O'.\nDo you want to change your icon? Y/N : ")
-        while prompt1.lower() not in 'yn':
-            print("Sorry, you entered an invalid option. Please try again.")
-            prompt1 = input("'O', do you want to change your icon? Y/N : ")
+        for i in range(len(icons)):
+            prompt = input(f"Player {i+1}, your icon is {icons[i]}.\n\nDo you want to change it? Y/N : ")
+            while prompt.lower() not in 'yn':
+                print("Sorry, you entered an invalid option. Please try again.\n\n")
+                prompt = input(f"{icons[i]}, do you want to change your icon? Y/N : ")
 
-        if prompt1.lower() == "y":
-            icon = input("Select your new icon: ")
-            icons[0] = icon
-            print("Icon changed successfully. Your new icon is {}.".format(icon))
-        elif prompt1.lower() == "n":
-            print("Sure thing. Your icon will remain as 'O'.\n== == == == == == ==")
-            
-        prompt2 = input("Player 2, your icon is 'X'. Do you want to change your icon? Y/N : ")
-        while prompt2.lower() not in 'yn':
-            print("Sorry, you entered an invalid option. Please try again.")
-            prompt2 = input("'X', do you want to change your icon? Y/N : ")
-
-        if prompt2.lower() == "y":
-            icon = input("Select your new icon: ")
-            icons[1] = icon
-            print("Icon changed successfully. Your new icon is {}.".format(icon))
-        elif prompt2.lower() == "n":
-            print("Sure thing. Your icon will remain as 'X'.\n== == == == == == ==")
+            if prompt.lower() == "y":
+                icon = input("Select your new icon (1 character): ")
+                while icon in icons[:i] and len(icon) > 1:
+                    print("Sorry, the icon you selected is invalid. Please select another icon.\n\n")
+                    icon = input("Select your new icon (1 character): ")
+                icons[i] = icon
+                print(f"Icon changed successfully. Your new icon is {icon}.\n"+"== "*20+'\n')
+            elif prompt.lower() == "n":
+                print(f"Sure! Your icon will remain as {icons[i]}.\n"+"== "*20+'\n')
         
         self.options['icons'] = tuple(icons)
+        
+        for char in 'Have fun!':
+            sys.stdout.write(char)
+            sys.stdout.flush()
+            time.sleep(0.02)
 
 class Cube:
     def __init__(self, root = None, num_boards = 6, parent = None, **kwargs):
@@ -88,12 +93,12 @@ class Cube:
         self.font = {'type': 'Bauhaus 93 Regular', 'sizes':{'small':10, 'medium':20, 'large':32}}
         #self.font = ('Bauhaus 93 Regular',20)
         self.padding = 0.1
-        self.corner = (1000,380)
+        self.corner = (700,380)
         self.side = 15
-        self.play_corner = (380,120)
+        self.play_corner = (180,120)
         self.play_side = 100
         self.icons = kwargs.get('icons',('O','X'))
-        self.colours = {'light': '#ccffaa', 'dark': '#ff5050'}
+        self.colours = {0: '#ff0000' , 1: '#00ffff' ,'light': '#ccffaa', 'dark': '#ff5050'}
     
         # score tracking
         self.turn_num = 0
@@ -110,11 +115,12 @@ class Cube:
 
     # scoreboard methods
     def init_scoreboard(self):
-        self.label=tk.Label(text=f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}",bg='#00ffff',
-                            font=(self.font['type'], self.font['sizes']['medium']))
-        self.label.place(x=800,y=80)
+        self.label=tk.Label(text=f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}",bg=self.colours[0],
+                            font=(self.font['type'], self.font['sizes']['large']))
+        self.label.place(x=700,y=80)
     def update_scoreboard(self):
         self.label['text'] = f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}"
+        self.label['bg'] = self.colours[(self.turn_num+1)%2]
   
     def init_cube(self, num_boards):
         if num_boards == 6:
@@ -244,7 +250,7 @@ class Cube:
                 self.boards[0].rotate(-times)
             elif index == 2:
                 self.boards[5].rotate(times)
-            
+        
         self.update_cube_state()
         self.can_turn = False
         try:
@@ -282,7 +288,6 @@ class Cube:
         if self.wins[1] > old_wins[1] or self.wins[2] > old_wins[2]:
             # toggle to mode to turn cube
             self.turn_cube()
-            #time.sleep(0.001)
 
         # if all cells are filled, end the game
         if self.turn_num >= len(self.boards)*9:
@@ -293,7 +298,7 @@ class Cube:
             is_restart = tkinter.messagebox.askyesno(title='Game Over', 
                                                     message= winner+'\n\n'+message + '\nRestart?')
             if is_restart:
-                self.window.destroy()
+                self.parent.window.destroy()
                 self.parent.restart()
             else:
                 self.parent.end()
@@ -423,12 +428,4 @@ class Board(Cube):
         self.wins = wins
         return wins
 
-def start():
-    root = tk.Tk()
-    root.title('1D Tic Tac Toe')
-    root.geometry('1600x800+-10+0')
-    game = Cube(root)
-    root.mainloop()
-
-#start()
 game = Game(6)
