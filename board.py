@@ -9,33 +9,37 @@ import os
 import sys
 import random
 
-class Game(tk.Frame):
+class Game():
     def __init__(self, num_boards = 6, master=None):
-        super().__init__(master)
+        #super().__init__(master)
         self.master = master
 
         self.num_boards = num_boards
+        self.options = {}
+        self.icon_select()
+        self.restart()
         
-        #self.window = tk.Tk()
-        #self.restart()
-        self.title()
-    
     def restart(self):
         #self.window.destroy()
         self.window = tk.Tk()
         self.window.title('1D Tic Tac Toe')
         self.window.geometry('500x300+500+100')
 
-        self.cube = Cube(self, self.num_boards)
+        self.cube = Cube(self.window, self.num_boards, parent = self, **self.options)
 
         self.window.mainloop()
     
+    def end(self):
+        self.window.destroy()
+        self.credits()
+    
     # Generate title   
-    def title(self):
+    def credits(self):
         f = open(r'intro.txt')
         read = f.read()
 
         count = 0
+        print('\n'*5)
         for char in read:
             if char == '\n':
                 count += 1
@@ -46,18 +50,50 @@ class Game(tk.Frame):
             sys.stdout.flush()
             time.sleep(0.02)
 
-# (cross: _ wins, circle: _ wins)
+    # Select symbols for game
+    def icon_select(self):
+        icons = ['O','X']
+        prompt1 = input("Player 1, your icon is 'O'.\nDo you want to change your icon? Y/N : ")
+        while prompt1.lower() not in 'yn':
+            print("Sorry, you entered an invalid option. Please try again.")
+            prompt1 = input("'O', do you want to change your icon? Y/N : ")
+
+        if prompt1.lower() == "y":
+            icon = input("Select your new icon: ")
+            icons[0] = icon
+            print("Icon changed successfully. Your new icon is {}.".format(icon))
+        elif prompt1.lower() == "n":
+            print("Sure thing. Your icon will remain as 'O'.\n== == == == == == ==")
+            
+        prompt2 = input("Player 2, your icon is 'X'. Do you want to change your icon? Y/N : ")
+        while prompt2.lower() not in 'yn':
+            print("Sorry, you entered an invalid option. Please try again.")
+            prompt2 = input("'X', do you want to change your icon? Y/N : ")
+
+        if prompt2.lower() == "y":
+            icon = input("Select your new icon: ")
+            icons[1] = icon
+            print("Icon changed successfully. Your new icon is {}.".format(icon))
+        elif prompt2.lower() == "n":
+            print("Sure thing. Your icon will remain as 'X'.\n== == == == == == ==")
+        
+        self.options['icons'] = tuple(icons)
+
 class Cube:
-    def __init__(self, root = None, num_boards = 6):
+    def __init__(self, root = None, num_boards = 6, parent = None, **kwargs):
         self.root = root
+        self.parent = parent
 
         # display parameters
-        self.font = ('Bauhaus 93 Regular',20)
+        self.font = {'type': 'Bauhaus 93 Regular', 'sizes':{'small':10, 'medium':20, 'large':32}}
+        #self.font = ('Bauhaus 93 Regular',20)
         self.padding = 0.1
         self.corner = (1000,380)
         self.side = 15
         self.play_corner = (380,120)
         self.play_side = 100
+        self.icons = kwargs.get('icons',('O','X'))
+        self.colours = {'light': '#ccffaa', 'dark': '#ff5050'}
     
         # score tracking
         self.turn_num = 0
@@ -70,20 +106,15 @@ class Cube:
         self.playfield.board = self.boards[2].board
 
         self.init_controls()
-        
-        self.display_cube()
-        self.debug = tk.Button(self.root, text = 'Debug', command=self.debug_func)
-        self.debug.place(x= 20, y= 20, width=50, height=20)
+        self.init_cube_display()
 
-    def debug_func(self):
-        self.playfield.set_activity()
-
+    # scoreboard methods
     def init_scoreboard(self):
-        self.label=tk.Label(text=f"O wins: {self.wins[1]}\nX wins: {self.wins[2]}",bg='#00ffff',
-                            font=self.font)
+        self.label=tk.Label(text=f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}",bg='#00ffff',
+                            font=(self.font['type'], self.font['sizes']['medium']))
         self.label.place(x=800,y=80)
     def update_scoreboard(self):
-        self.label['text'] = f"O wins: {self.wins[1]}\nX wins: {self.wins[2]}"
+        self.label['text'] = f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}"
   
     def init_cube(self, num_boards):
         if num_boards == 6:
@@ -100,6 +131,7 @@ class Cube:
                 corner = (self.corner[0] + i*self.side*3, self.corner[1])
                 self.boards.append(Board(self, self.root, corner, self.side))
 
+    # init the control buttons
     def init_controls(self):
         # init list of control buttons [up(3), down(3,3), left(3), right(3,3)]
         self.controls = [[None,None,None],[None,None,None],[None,None,None],[None,None,None],[None,None,None],[None,None,None]]
@@ -132,13 +164,24 @@ class Cube:
 
         for i in range(6):
             for j in range(3):
-                self.controls[i][j] = tk.Button(self.root, text = symbs[i], command =self.controls_commands[i])
+                self.controls[i][j] = tk.Button(self.root, text = symbs[i], command =self.controls_commands[i], bg=self.colours['light'])
                 self.controls[i][j].place(x= corners[i][j][0], y= corners[i][j][1], width=dim[i>2][0], height=dim[i>2][1])
 
         self.toggle_button = tk.Button(self.root, text = 'Toggle\nControls', command=self.toggle_controls)
         self.toggle_place = {'x': x-2*p-h, 'y': y-2*p-h, 'width': w-p, 'height': w-p}
-        #self.toggle_button.place(**self.toggle_place)
-        #self.toggle_button.place_forget()
+    # toggle the functionality of the control buttons    
+    def toggle_controls(self):
+        if self.is_turning and self.can_turn:
+            for i in range(6):
+                for j in range(3):
+                    self.controls[i][j]['command'] = self.turn_commands[i][j]
+                    self.controls[i][j]['bg'] = self.colours['dark']
+        else:
+            for i in range(6):
+                for j in range(3):
+                    self.controls[i][j]['command'] = self.controls_commands[i]
+                    self.controls[i][j]['bg'] = self.colours['light']
+        self.is_turning = not self.is_turning
     # rotate cube up a given number of times
     def rotate_up(self, times = 1):
         times %= 4
@@ -156,7 +199,6 @@ class Cube:
         self.boards[3].rotate(-times)
 
         self.update_cube_state()
-
     # rotate cube left a given number of times
     def rotate_left(self, times = 1):
         times %= 4
@@ -170,7 +212,6 @@ class Cube:
         self.boards[0].rotate(-times)
         self.boards[5].rotate(times)
         self.update_cube_state()
-
     # turn a row/ col based on index, centered on board 2
     def make_turn(self, times = 1, index = 1, is_col = True):
         times %= 4
@@ -206,28 +247,19 @@ class Cube:
             
         self.update_cube_state()
         self.can_turn = False
-        self.toggle_button.place_forget()
-        self.toggle_controls() # toggles function of control buttons after turn
-        self.playfield.set_activity(True)
-
-    def toggle_controls(self):
-        if self.is_turning and self.can_turn:
-            for i in range(6):
-                for j in range(3):
-                    self.controls[i][j]['command'] = self.turn_commands[i][j]
-                    self.controls[i][j]['bg'] = '#FF3012'
-        else:
-            for i in range(6):
-                for j in range(3):
-                    self.controls[i][j]['command'] = self.controls_commands[i]
-                    self.controls[i][j]['bg'] = '#FFFFFF'
-        self.is_turning = not self.is_turning
+        try:
+            self.toggle_button.place_forget()
+            self.toggle_controls() # toggles function of control buttons after turn
+            self.playfield.set_activity(True)
+        except:
+            pass
 
     # displays all the Board instances
-    def display_cube(self):
-        self.playfield.display_board()
+    def init_cube_display(self):
+        self.playfield.init_board_display()
         for board in self.boards:
-            board.display_board()
+            board.init_board_display()
+            board.set_activity(False)
     # updates display of boards
     def update_cube_display(self):
         self.playfield.board = self.boards[2].board
@@ -248,27 +280,23 @@ class Cube:
 
         # check if total num of wins for a player increases
         if self.wins[1] > old_wins[1] or self.wins[2] > old_wins[2]:
-            # check who is turning cube
-            turner = (self.wins[1] > old_wins[1]) + (self.wins[2] > old_wins[2])
-            priority = 2 - (self.turn_num%2)
             # toggle to mode to turn cube
             self.turn_cube()
+            #time.sleep(0.001)
 
         # if all cells are filled, end the game
         if self.turn_num >= len(self.boards)*9:
             winner = "It's a tie!"
             if self.wins[1] != self.wins[2]: 
-                winner = 'O'*(self.wins[1] > self.wins[2]) + 'X'*(self.wins[2] > self.wins[1]) + ' wins!'
-            message = f"Score\n O:   {self.wins[1]}  X:   {self.wins[2]}"
+                winner = self.icons[self.wins[2] > self.wins[1]] + ' wins!'
+            message = f"Score\n {self.icons[0]}:    {self.wins[1]}\n{self.icons[1]}:    {self.wins[2]}"
             is_restart = tkinter.messagebox.askyesno(title='Game Over', 
                                                     message= winner+'\n\n'+message + '\nRestart?')
             if is_restart:
-                self.root.destroy()
-                #self.parent.restart()
-                start()
+                self.window.destroy()
+                self.parent.restart()
             else:
-                tkinter.messagebox.showinfo(title='Good Game!',message='Thanks for playing!')
-                self.root.destroy()
+                self.parent.end()
 
     def turn_cube(self):
         # display turn buttons over current board
@@ -296,18 +324,18 @@ class Board(Cube):
         self.buttons = [[None, None, None], [None, None, None], [None, None, None]]
 
     # displays the board of buttons
-    def display_board(self):
+    def init_board_display(self):
         x,y = self.corner
         for i in range(3):
             for j in range(3):
-                symb = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
+                symb = self.parent.icons[0]*(self.board[i][j] == 1) + self.parent.icons[1]*(self.board[i][j] == 2)
                 self.buttons[i][j] = tk.Button(self.root, text = symb, command=partial(self.make_move,(i,j)))
                 self.buttons[i][j].place(x= x + i * self.side, y= y + j * self.side, width=self.side, height=self.side)
     # updates the text for each button
     def update_board(self):
         for i in range(3):
             for j in range(3):
-                self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
+                self.buttons[i][j]['text'] = self.parent.icons[0]*(self.board[i][j] == 1) + self.parent.icons[1]*(self.board[i][j] == 2)
     # toggles button inactivity
     def set_activity(self, is_active = True):
         for i in range(len(self.buttons)):
@@ -364,7 +392,7 @@ class Board(Cube):
         is_valid = self.coordinates_valid(coords)
         if (is_valid):
             self.board[i][j] = 2 - (turn_num%2)
-            self.buttons[i][j]['text'] = 'O'*(self.board[i][j] == 1) + 'X'*(self.board[i][j] == 2)
+            self.buttons[i][j]['text'] = self.parent.icons[self.board[i][j] == 2]
 
             self.count_wins()
             self.parent.update_cube_state()
@@ -403,5 +431,4 @@ def start():
     root.mainloop()
 
 #start()
-game = Game()
-#game.title()
+game = Game(6)
