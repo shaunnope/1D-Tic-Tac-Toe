@@ -13,8 +13,9 @@ class Game():
     def __init__(self, num_boards = 6):
         self.num_boards = num_boards
         self.options = {}
-        self.icon_select()
-        self.restart()
+        #self.icon_select()
+        #self.restart()
+        self.credits()
         
     def restart(self):
         self.window = tk.Tk()
@@ -31,7 +32,7 @@ class Game():
     
     # Generate title   
     def credits(self):
-        f = open(r'intro.txt')
+        f = open(r'assets/credits.txt')
         read = f.read()
 
         count = 0
