@@ -91,12 +91,12 @@ class Cube:
 
         # display parameters
         self.font = {'type': 'Bauhaus 93 Regular', 'sizes':{'small':10, 'medium':20, 'large':32}}
-        #self.font = ('Bauhaus 93 Regular',20)
         self.padding = 0.1
         self.corner = (700,380)
         self.side = 15
         self.play_corner = (180,120)
         self.play_side = 100
+        self.play_index = int(num_boards == 6) + int(num_boards > 2)
         self.icons = kwargs.get('icons',('O','X'))
         self.colours = {0: '#ff0000' , 1: '#00ffff' ,'light': '#ccffaa', 'dark': '#ff5050'}
     
@@ -108,9 +108,9 @@ class Cube:
         self.boards = []
         self.init_cube(num_boards)
         self.playfield = Board(self, self.root, self.play_corner, self.play_side)
-        self.playfield.board = self.boards[2].board
-
-        self.init_controls()
+        self.playfield.board = self.boards[self.play_index].board
+        if num_boards == 6:
+            self.init_controls()
         self.init_cube_display()
 
     # scoreboard methods
@@ -120,7 +120,7 @@ class Cube:
         self.label.place(x=700,y=80)
     def update_scoreboard(self):
         self.label['text'] = f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}"
-        self.label['bg'] = self.colours[(self.turn_num+1)%2]
+        self.label['bg'] = self.colours[(self.turn_num)%2]
   
     def init_cube(self, num_boards):
         if num_boards == 6:
@@ -265,10 +265,10 @@ class Cube:
         self.playfield.init_board_display()
         for board in self.boards:
             board.init_board_display()
-            board.set_activity(False)
+            board.set_activity(len(self.boards) != 6)
     # updates display of boards
     def update_cube_display(self):
-        self.playfield.board = self.boards[2].board
+        self.playfield.board = self.boards[self.play_index].board
         self.playfield.update_board()
         for board in self.boards:
             board.update_board()
@@ -276,7 +276,7 @@ class Cube:
     # update the attributes of the cube after each move
     def update_cube_state(self):
         self.update_cube_display()
-        self.boards[2].wins = self.playfield.count_wins()
+        self.boards[self.play_index].wins = self.playfield.count_wins()
         # store previous wins
         old_wins = deepcopy(self.wins)
         # count current wins
@@ -294,7 +294,7 @@ class Cube:
             winner = "It's a tie!"
             if self.wins[1] != self.wins[2]: 
                 winner = self.icons[self.wins[2] > self.wins[1]] + ' wins!'
-            message = f"Score\n {self.icons[0]}:    {self.wins[1]}\n{self.icons[1]}:    {self.wins[2]}"
+            message = f"Score\n\n{self.icons[0]}:    {self.wins[1]}\n{self.icons[1]}:    {self.wins[2]}"
             is_restart = tkinter.messagebox.askyesno(title='Game Over', 
                                                     message= winner+'\n\n'+message + '\nRestart?')
             if is_restart:
@@ -400,8 +400,8 @@ class Board(Cube):
             self.buttons[i][j]['text'] = self.parent.icons[self.board[i][j] == 2]
 
             self.count_wins()
-            self.parent.update_cube_state()
             self.parent.turn_num += 1
+            self.parent.update_cube_state()
         else:
             tkinter.messagebox.showinfo(title='Invalid cell',message='Please choose a valid cell')
 
@@ -428,4 +428,4 @@ class Board(Cube):
         self.wins = wins
         return wins
 
-game = Game(6)
+game = Game(1)
