@@ -13,9 +13,8 @@ class Game():
     def __init__(self, num_boards = 6):
         self.num_boards = num_boards
         self.options = {}
-        #self.icon_select()
-        #self.restart()
-        self.credits()
+        self.icon_select()
+        self.restart()
         
     def restart(self):
         self.window = tk.Tk()
@@ -85,7 +84,7 @@ class Game():
             sys.stdout.flush()
             time.sleep(0.02)
 
-class Cube:
+class Cube(Game):
     def __init__(self, root = None, num_boards = 6, parent = None, **kwargs):
         self.root = root
         self.parent = parent
@@ -116,12 +115,12 @@ class Cube:
 
     # scoreboard methods
     def init_scoreboard(self):
-        self.label=tk.Label(text=f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}",bg=self.colours[0],
+        self.scoreboard=tk.Label(text=f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}",bg=self.colours[0],
                             font=(self.font['type'], self.font['sizes']['large']))
-        self.label.place(x=700,y=80)
+        self.scoreboard.place(x=700,y=80)
     def update_scoreboard(self):
-        self.label['text'] = f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}"
-        self.label['bg'] = self.colours[(self.turn_num)%2]
+        self.scoreboard['text'] = f"{self.icons[0]} wins: {self.wins[1]}\n{self.icons[1]} wins: {self.wins[2]}"
+        self.scoreboard['bg'] = self.colours[(self.turn_num)%2]
   
     def init_cube(self, num_boards):
         if num_boards == 6:
@@ -336,6 +335,8 @@ class Board(Cube):
             for j in range(3):
                 symb = self.parent.icons[0]*(self.board[i][j] == 1) + self.parent.icons[1]*(self.board[i][j] == 2)
                 self.buttons[i][j] = tk.Button(self.root, text = symb, command=partial(self.make_move,(i,j)))
+                if self.side > 50:
+                    self.buttons[i][j]['font'] = (self.parent.font['type'],self.parent.font['sizes']['large'])
                 self.buttons[i][j].place(x= x + i * self.side, y= y + j * self.side, width=self.side, height=self.side)
     # updates the text for each button
     def update_board(self):
@@ -429,4 +430,4 @@ class Board(Cube):
         self.wins = wins
         return wins
 
-game = Game(1)
+game = Game()
