@@ -1,3 +1,13 @@
+'''
+Rubik's-Tac-Toe
+By F02 Group 10 - 2020
+
+1005153 Sean Yap                              
+1004865 Wang Yanbao                           
+1005228 Sherin Saji                           
+1004990 Chan Xinze  
+'''
+
 from copy import deepcopy
 
 import tkinter as tk
@@ -36,6 +46,11 @@ class Game():
 
         count = 0
         print('\n'*5)
+
+        '''
+        The following for-loop to print characters individually is adapted from
+        https://stackoverflow.com/questions/9246076/how-to-print-one-character-at-a-time-on-one-line
+        '''
         for char in read:
             if char == '\n':
                 count += 1
@@ -50,6 +65,10 @@ class Game():
     def icon_select(self):
         welcome = '\n'*10+"Welcome to Rubik's-Tac-Toe!\n\nA game of passion, determination, and bloodlust."+'\n'*5
 
+        '''
+        The following for-loop to print characters individually is adapted from
+        https://stackoverflow.com/questions/9246076/how-to-print-one-character-at-a-time-on-one-line
+        '''
         for char in welcome:
             if char == '\n':
                 time.sleep(0.1)
@@ -79,10 +98,14 @@ class Game():
         
         self.options['icons'] = tuple(icons)
         
+        '''
+        The following for-loop to print characters individually is adapted from
+        https://stackoverflow.com/questions/9246076/how-to-print-one-character-at-a-time-on-one-line
+        '''
         for char in 'Have fun!':
             sys.stdout.write(char)
             sys.stdout.flush()
-            time.sleep(0.02)
+            time.sleep(0.05)
 
 class Cube(Game):
     def __init__(self, root = None, num_boards = 6, parent = None, **kwargs):
@@ -90,7 +113,7 @@ class Cube(Game):
         self.parent = parent
 
         # display parameters
-        self.font = {'type': 'Bauhaus 93 Regular', 'sizes':{'small':10, 'medium':20, 'large':32}}
+        self.font = {'type': 'Consolas', 'sizes':{'small':10, 'medium':20, 'large':32}}
         self.padding = 0.1
         self.corner = (700,380)
         self.side = 15
