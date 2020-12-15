@@ -107,7 +107,7 @@ class Game():
             sys.stdout.flush()
             time.sleep(0.05)
 
-class Cube(Game):
+class Cube():
     def __init__(self, root = None, num_boards = 6, parent = None, **kwargs):
         self.root = root
         self.parent = parent
@@ -334,7 +334,7 @@ class Cube(Game):
         self.is_turning = True
         self.playfield.set_activity(False)
         
-class Board(Cube):
+class Board():
     # init empty board and board score
     def __init__(self, parent=None, root=None, corner = (380,80), side = 15):
         if parent is None:
